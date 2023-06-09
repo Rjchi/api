@@ -12,6 +12,8 @@ Flight::route('GET|POST /login', function () {
     $sql->execute();
     $response = $sql->fetchAll();
 
+    Flight::set('userId', $response[0]["Id"]);
+    // $id = Flight::get('userId');
     Flight::json($response);
 });
 
