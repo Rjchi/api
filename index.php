@@ -1,4 +1,11 @@
 <?php
+header("Access-Control-Allow-Origin: *");
+
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
+
+header("Access-Control-Allow-Headers: Content-Type");
+
+header("Content-Type: application/json");
 
 require 'flight/Flight.php';
 
@@ -6,10 +13,10 @@ Flight::register('db', 'PDO', array('mysql:host=localhost;dbname=caso_23', 'root
 
 # LOGIN
 
-Flight::route('GET|POST /login', function () {
+Flight::route('GET|POST /login/@email/@password', function ($email, $password) {
 
-    $password = (Flight::request()->data->password);
-    $email = (Flight::request()->data->email);
+    // $password = (Flight::request()->data->password);
+    // $email = (Flight::request()->data->email);
 
     $sql = Flight::db()->prepare("SELECT * FROM cliente WHERE CorreoElectronico = '$email' AND contrasenia = '$password'");
     $sql->execute();
@@ -26,13 +33,13 @@ Flight::route('GET|POST /login', function () {
 
 # NEW_ACCOUNT || SIGN UP
 
-Flight::route('GET|POST /new_account', function () {
+Flight::route('GET|POST /new_account/@name/@last_name/@email/@password/@admin/', function ($name, $last_name, $email, $password, $admin ) {
     try {
-        $name = (Flight::request()->data->name);
-        $last_name = (Flight::request()->data->last_name);
-        $email = (Flight::request()->data->email);
-        $password = (Flight::request()->data->password);
-        $admin = (Flight::request()->data->admin);
+        // $name = (Flight::request()->data->name);
+        // $last_name = (Flight::request()->data->last_name);
+        // $email = (Flight::request()->data->email);
+        // $password = (Flight::request()->data->password);
+        // $admin = (Flight::request()->data->admin);
 
         $sql = Flight::db()->prepare("INSERT INTO cliente (Nombre, Apellido, CorreoELectronico, contrasenia, Admin)
         VALUES ('$name', '$last_name', '$email', '$password', $admin)");
@@ -55,10 +62,21 @@ Flight::route('GET|POST /new_account', function () {
 
 Flight::route('GET /plans', function () {
     try {
-        $sql = Flight::db()->prepare("SELECT planmembresia.Nombre, planmembresia.Duracion, clase.Nombre, clase.Horario
-        FROM planmembresia, clase, membresia, inscripcionclase
-        WHERE membresia.PlanMembresiaId = planmembresia.Id AND inscripcionclase.MembresiaId = membresia.Id AND
-        inscripcionclase.ClaseId = clase.Id;");
+        $sql = Flight::db()->prepare("SELECT p.Id, p.Nombre, p.Duracion, c.Nombre, c.Horario
+        FROM planmembresia p
+        INNER JOIN membresia m ON m.PlanMembresiaId = p.Id
+        INNER JOIN inscripcionclase ic ON ic.MembresiaId = m.Id
+        INNER JOIN clase c ON ic.ClaseId = c.Id
+        WHERE (p.Id, c.Id) IN (
+            SELECT p1.Id, MIN(c1.Id)
+            FROM planmembresia p1
+            INNER JOIN membresia m1 ON m1.PlanMembresiaId = p1.Id
+            INNER JOIN inscripcionclase ic1 ON ic1.MembresiaId = m1.Id
+            INNER JOIN clase c1 ON ic1.ClaseId = c1.Id
+            GROUP BY p1.Id
+        )
+        ORDER BY p.Id, c.Id;
+        ");
 
         $sql->execute();
         $response = $sql->fetchAll();
@@ -453,6 +471,12 @@ Flight::route('GET /admin/filter', function () {
     } catch (Exception $e) {
         echo "Error";
     }
+});
+
+Flight::before('json', function () {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET,PUT,POST,DELETE');
+    header('Access-Control-Allow-Headers: Content-Type');
 });
 
 Flight::start();
