@@ -128,13 +128,13 @@ Flight::route('GET /class/@id', function ($id) {
 
 # PROFILE
 
-Flight::route('POST /profile/@id', function ($id) {
+Flight::route('GET /profile/@id/@name/@last_name/@email/@password/@admin', function ($id, $name, $last_name, $email, $password, $admin) {
     try {
-        $name = Flight::request()->data->name;
-        $last_name = Flight::request()->data->last_name;
-        $email = Flight::request()->data->email;
-        $password = Flight::request()->data->password;
-        $admin = Flight::request()->data->admin;
+        // $name = Flight::request()->data->name;
+        // $last_name = Flight::request()->data->last_name;
+        // $email = Flight::request()->data->email;
+        // $password = Flight::request()->data->password;
+        // $admin = Flight::request()->data->admin;
 
         $sql = Flight::db()->prepare("UPDATE cliente SET Nombre='$name', Apellido='$last_name',
         CorreoElectronico='$email', contrasenia='$password', Admin=$admin WHERE id = $id");
@@ -142,7 +142,7 @@ Flight::route('POST /profile/@id', function ($id) {
         $sql->execute();
         $response = $sql->fetchAll();
 
-        Flight::json($response);
+        Flight::json("Good");
     } catch (Exception $e) {
         echo "Error";
     }
