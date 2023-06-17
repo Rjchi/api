@@ -62,7 +62,7 @@ Flight::route('GET|POST /new_account/@name/@last_name/@email/@password/@admin/',
 
 Flight::route('GET /plans', function () {
     try {
-        $sql = Flight::db()->prepare("SELECT p.Id, p.Nombre, p.Duracion, c.Nombre, c.Horario
+        $sql = Flight::db()->prepare("SELECT p.Id, p.Nombre, p.Duracion, c.Nombre AS ClaseNombre, c.Horario
         FROM planmembresia p
         INNER JOIN membresia m ON m.PlanMembresiaId = p.Id
         INNER JOIN inscripcionclase ic ON ic.MembresiaId = m.Id
@@ -158,7 +158,7 @@ Flight::route('GET /filter', function () {
         $name = ucwords($name);
         $name = trim($name);
 
-        $sql = Flight::db()->prepare("SELECT planmembresia.Nombre, planmembresia.Duracion, clase.Nombre, clase.Horario
+        $sql = Flight::db()->prepare("SELECT planmembresia.Id, planmembresia.Nombre, planmembresia.Duracion, clase.Nombre AS ClaseNombre, clase.Horario
         FROM planmembresia, clase, membresia, inscripcionclase
         WHERE planmembresia.Nombre = '$name'
         AND membresia.PlanMembresiaId = planmembresia.Id
@@ -176,11 +176,11 @@ Flight::route('GET /filter', function () {
 
 # MEMBERSHIP SELECTION
 
-Flight::route('GET|POST /membership_selection/@id', function ($id) {
+Flight::route('GET|POST /membership_selection/@id/@planId/@start_date', function ($id, $planId, $start_date) {
     try {
 
-        $planId = Flight::request()->data->planId;
-        $start_date = Flight::request()->data->start_date;
+        // $planId = Flight::request()->data->planId;
+        // $start_date = Flight::request()->data->start_date;
 
         $sql = Flight::db()->prepare("SELECT cliente.Id
         FROM cliente
@@ -207,17 +207,19 @@ Flight::route('GET|POST /membership_selection/@id', function ($id) {
 
             $sql->execute();
             $response2 = $sql->fetchAll();
-
+            
+            Flight::json("Seleccionada");
         } else {
             $sql = Flight::db()->prepare("UPDATE membresia SET PlanMembresiaId = $planId, FechaInicio = '$start_date'
             WHERE ClienteId = $id");
 
             $sql->execute();
             $response2 = $sql->fetchAll();
+            Flight::json("Actualizado");
         }
 
 
-        Flight::json($response);
+        // Flight::json($response);
     } catch (Exception $e) {
         echo "Error";
     }
@@ -238,6 +240,44 @@ Flight::route('GET /count_records', function () {
         $response = $sql->fetchAll();
 
         Flight::json($response);
+    } catch (Exception $e) {
+        echo "Error";
+    }
+});
+
+Flight::route('GET /create_mem/@nombre/@duracion', function ( $nombre, $duracion) {
+    try {
+        $sql = Flight::db()->prepare("INSERT INTO planmembresia(Nombre, Duracion) VALUES ('$nombre','$duracion')");
+
+        $sql->execute();
+        $response = $sql->fetchAll();
+
+        $rowCount = $sql->rowCount();
+
+        if ($rowCount > 0) {
+            echo "Good";
+        } else {
+            echo "error";
+        }
+    } catch (Exception $e) {
+        echo "Error";
+    }
+});
+
+Flight::route('GET /create_class/@Nombre/@Horario/@Descripcion', function ( $Nombre, $Horario, $Descripcion) {
+    try {
+        $sql = Flight::db()->prepare("INSERT INTO clase(Nombre, Horario, Descripcion) VALUES ('$Nombre','$Horario','$Descripcion')");
+
+        $sql->execute();
+        $response = $sql->fetchAll();
+
+        $rowCount = $sql->rowCount();
+
+        if ($rowCount > 0) {
+            echo "Good";
+        } else {
+            echo "error";
+        }
     } catch (Exception $e) {
         echo "Error";
     }
@@ -264,11 +304,7 @@ Flight::route('GET /customers', function () {
 
 Flight::route('GET /memberships', function () {
     try {
-        $sql = Flight::db()->prepare("SELECT membresia.Id, cliente.Nombre, planmembresia.Nombre,
-        planmembresia.Duracion, membresia.FechaInicio
-        FROM cliente, planmembresia, membresia
-        WHERE membresia.PlanMembresiaId = planmembresia.Id
-        AND membresia.ClienteId = cliente.Id");
+        $sql = Flight::db()->prepare("SELECT * From planmembresia");
 
         $sql->execute();
         $response = $sql->fetchAll();
@@ -352,19 +388,44 @@ Flight::route('GET /show_class/@classId', function ($classId) {
 
 # EDIT CUSTOMER
 
-Flight::route('POST /update_membership/@membershipId', function ($membershipId) {
+Flight::route('GET /update_customer/@customerId/@Nombre/@Apellido/@CorreoElectronico/@contrasenia/@Admin', function ($customerId, $Nombre, $Apellido, $CorreoElectronico, $contrasenia, $Admin) {
     try {
 
-        $planId = Flight::request()->data->planId;
-        $start_date = Flight::request()->data->start_date;
-
-        $sql = Flight::db()->prepare("UPDATE membresia SET PlanMembresiaId = $planId, FechaInicio = '$start_date'
-            WHERE ClienteId = $membershipId");
+        $sql = Flight::db()->prepare("UPDATE cliente SET Nombre='$Nombre', Apellido='$Apellido', CorreoElectronico='$CorreoElectronico', contrasenia='$contrasenia',Admin='$Admin'
+        WHERE Id = $customerId");
 
         $sql->execute();
         $response = $sql->fetchAll();
 
-        Flight::json($response);
+        $rowCount = $sql->rowCount();
+
+        if ($rowCount > 0) {
+            echo "Good";
+        } else {
+            echo "error";
+        }
+    } catch (Exception $e) {
+        echo "Error";
+    }
+});
+
+Flight::route('GET /update_membership/@membershipId/@Nombre/@Duracion', function ($membershipId, $Nombre, $Duracion) {
+    try {
+
+        // $planId = Flight::request()->data->planId;
+        // $start_date = Flight::request()->data->start_date;
+
+        $sql = Flight::db()->prepare("UPDATE planmembresia SET Nombre='$Nombre', Duracion=$Duracion WHERE Id = $membershipId");
+
+        $sql->execute();
+        $response = $sql->fetchAll();
+        $rowCount = $sql->rowCount();
+
+        if ($rowCount > 0) {
+            echo "Good";
+        } else {
+            echo "error";
+        }
     } catch (Exception $e) {
         echo "Error";
     }
@@ -372,12 +433,12 @@ Flight::route('POST /update_membership/@membershipId', function ($membershipId) 
 
 # EDIT CLASS
 
-Flight::route('POST /update_class/@classId', function ($classId) {
+Flight::route('GET /update_class/@classId/@name/@horary/@description', function ($classId, $name, $horary, $description) {
     try {
 
-        $name = Flight::request()->data->name;
-        $horary = Flight::request()->data->horary;
-        $description = Flight::request()->data->description;
+        // $name = Flight::request()->data->name;
+        // $horary = Flight::request()->data->horary;
+        // $description = Flight::request()->data->description;
 
         $sql = Flight::db()->prepare("UPDATE clase
         SET Nombre = '$name', Horario = '$horary', Descripcion = '$description'
@@ -385,8 +446,13 @@ Flight::route('POST /update_class/@classId', function ($classId) {
 
         $sql->execute();
         $response = $sql->fetchAll();
+        $rowCount = $sql->rowCount();
 
-        Flight::json($response);
+        if ($rowCount > 0) {
+            echo "Good";
+        } else {
+            echo "error";
+        }
     } catch (Exception $e) {
         echo "Error";
     }
@@ -396,7 +462,7 @@ Flight::route('POST /update_class/@classId', function ($classId) {
 
 # DELETE CUSTOMER
 
-Flight::route('DELETE /delete_customer/@customerId', function ($customerId) {
+Flight::route('GET /delete_customer/@customerId', function ($customerId) {
     try {
         $sql = Flight::db()->prepare("DELETE FROM cliente WHERE Id = $customerId");
 
@@ -415,9 +481,9 @@ Flight::route('DELETE /delete_customer/@customerId', function ($customerId) {
 
 # DELETE MEMBERSHIP
 
-Flight::route('DELETE /delete_membership/@membershipId', function ($membershipId) {
+Flight::route('GET /delete_membership/@membershipId', function ($membershipId) {
     try {
-        $sql = Flight::db()->prepare("DELETE FROM membresia WHERE Id = $membershipId");
+        $sql = Flight::db()->prepare("DELETE FROM planmembresia WHERE Id = $membershipId");
 
         $sql->execute();
 
@@ -434,7 +500,7 @@ Flight::route('DELETE /delete_membership/@membershipId', function ($membershipId
 
 # DELETE CLASS
 
-Flight::route('DELETE /delete_class/@classId', function ($classId) {
+Flight::route('GET /delete_class/@classId', function ($classId) {
     try {
         $sql = Flight::db()->prepare("DELETE FROM clase WHERE Id = $classId");
 
