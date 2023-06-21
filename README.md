@@ -1,4 +1,4 @@
-# La API debe estar en el puerto 81 y debe modificar el nombre del archivo de descarga por API 
+# La API debe estar en el puerto 81 y debe modificar el nombre del archivo de descarga por API tambien debe ser ubicada en el xammp/htdocs.
 
 # What is Flight?
 
